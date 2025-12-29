@@ -1,0 +1,50 @@
+/* Slideshow block */
+
+.wp-block-slideshow-block-slideshow {
+	width: 100%;
+	position: relative;
+	overflow: hidden;
+}
+
+.wp-block-slideshow-block-slideshow .wp-block-image {
+	position: absolute;
+	top: 0;
+	width: 100%;
+	height: 100%;
+}
+
+.wp-block-slideshow-block-slideshow .wp-block-image > div {
+	width: 100%;
+	height: 100%;
+}
+
+.wp-block-slideshow-block-slideshow .wp-block-image img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	opacity: 0;
+	transition: opacity 1s ease-in-out;
+}
+
+/* Frontend: first image visible by default */
+.wp-block-slideshow-block-slideshow .wp-block-image:first-child img {
+	opacity: 1;
+}
+
+.wp-block-slideshow-block-slideshow .wp-block-image figcaption {
+	display: none;
+}
+
+/* Desktop: 16:9 aspect ratio, full width */
+.wp-block-slideshow-block-slideshow {
+	aspect-ratio: 16 / 9;
+}
+
+/* Mobile: fixed height 800px, sides hidden as screen narrows */
+@media (max-width: 1200px) {
+	.wp-block-slideshow-block-slideshow {
+		aspect-ratio: none;
+		height: 800px;
+	}
+}
+

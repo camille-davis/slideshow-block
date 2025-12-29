@@ -1,0 +1,36 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "slideshow-block/slideshow",
+	"title": "Slideshow",
+	"category": "media",
+	"allowedBlocks": [ "core/image" ],
+	"description": "Image slideshow with automatic fade transitions.",
+	"keywords": [ "images", "photos", "slideshow", "carousel" ],
+	"textdomain": "slideshow-block",
+	"attributes": {},
+	"supports": {
+		"anchor": true,
+		"html": false,
+		"align": false,
+		"spacing": {
+			"margin": true,
+			"padding": false
+		},
+		"color": {
+			"text": false,
+			"background": true,
+			"gradients": true
+		},
+		"layout": {
+			"allowVerticalAlignment": false,
+			"allowOrientation": false,
+			"default": {
+				"type": "flex",
+				"orientation": "horizontal"
+			}
+		}
+	},
+	"style": "file:./style.css"
+}
+
