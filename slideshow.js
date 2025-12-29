@@ -8,9 +8,10 @@
 		}
 
 		let currentIndex = 0;
+		const TRANSITION = 'opacity 1s ease-in-out';
 		images.forEach(function (img, index) {
 			img.style.opacity = index === 0 ? '1' : '0';
-			img.style.transition = 'opacity 1s ease-in-out';
+			img.style.transition = TRANSITION;
 		});
 
 		slideshowElement._slideshowInterval = setInterval(function () {
