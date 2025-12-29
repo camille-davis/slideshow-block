@@ -173,11 +173,6 @@
 			display: 'block'
 		});
 
-		applyStyle(block.querySelector('.components-resizable-box__container'), {
-			maxWidth: 'none',
-			maxHeight: 'none'
-		});
-
 		applyStyle(block.querySelector('.block-editor-inner-blocks'), {
 			height: '100%'
 		});
@@ -188,10 +183,6 @@
 
 		block.querySelectorAll('.wp-block-image').forEach(function (imgBlock) {
 			applyStyle(imgBlock, { pointerEvents: 'none' }); // Prevent interaction in editor.
-			applyStyle(imgBlock.querySelector('div'), {
-				width: '100%',
-				height: '100%'
-			});
 		});
 
 		applyStyle(block, getResponsiveStyles(block));
@@ -248,35 +239,19 @@
 				return;
 			}
 
-				const processAllSlideshows = function () {
-					iframe.contentDocument.querySelectorAll('[data-type="slideshow-block/slideshow"]').forEach(function (block) {
-						if (block.querySelectorAll('img').length === 0) {
-							return;
-						}
+			const processAllSlideshows = function () {
+				const blocks = iframe.contentDocument.querySelectorAll('[data-type="slideshow-block/slideshow"]');
+				blocks.forEach(function (block) {
+					const images = block.querySelectorAll('img');
+					if (images.length === 0) {
+						return;
+					}
 
-						// Wait for wp to apply styles, then overwrite with our own.
-						const container = block.querySelector('.components-resizable-box__container');
-						if (!container) {
-							return;
-						}
-
-						const styleObserver = new MutationObserver(function (mutations) {
-							mutations.forEach(function (mutation) {
-								if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
-									if (container.style.maxHeight) {
-										applySlideshowStyles(block);
-										styleObserver.disconnect();
-									}
-								}
-							});
-						});
-
-						styleObserver.observe(container, {
-							attributes: true,
-							attributeFilter: ['style']
-						});
+					requestAnimationFrame(function () {
+						applySlideshowStyles(block);
 					});
-				};
+				});
+			};
 
 			// Process existing slideshow blocks.
 			processAllSlideshows();
