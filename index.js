@@ -11,10 +11,9 @@
 	// Constants
 	// ============================================================================
 
-	const SLIDE_DURATION = 5000; // 5 seconds per image
+	const SLIDE_DURATION = 5000;
 	const BREAKPOINT_DESKTOP = 1200;
 	const MOBILE_HEIGHT = 800;
-	const MIN_HEIGHT = 400;
 
 	// Gallery icon from WP icons library (same as lightbox gallery).
 	const slideshowIcon = createElement(SVG, {
@@ -36,10 +35,9 @@
 			const { clientId, attributes, setAttributes } = props;
 			const { replaceInnerBlocks } = useDispatch('core/block-editor');
 			const innerBlocksProps = useInnerBlocksProps(useBlockProps(), {
-				templateLock: 'all',
+				templateLock: 'all', // Prevent direct interaction with image blocks.
 			});
 
-			// Set layout attribute (to enable native drag and drop).
 			useEffect(function () {
 				if (!attributes.layout) {
 					setAttributes({
@@ -51,29 +49,53 @@
 				}
 			}, [attributes.layout]);
 
-			// Get image blocks.
 			const imageBlocks = useSelect(function (select) {
 				return select('core/block-editor').getBlocks(clientId);
 			}, [clientId]);
 			const hasImages = imageBlocks && imageBlocks.length > 0;
 
-			// Handle media selection from Media Library.
 			const replaceImages = function (images) {
 				if (!images || images.length === 0) {
 					return;
 				}
+				replaceInnerBlocks(clientId, images.map(function (image) {
 
-				const imageBlocksToInsert = images.map(function (image) {
-					const alt = (typeof image.alt === 'string' && image.alt.indexOf('This image has an empty alt attribute') === 0) ? '' : image.alt;
+					// Create image block.
+					// Remove WordPress alt anti-pattern placeholder text.
+					const alt = (typeof image.alt === 'string' && image.alt.startsWith('This image has an empty alt attribute')) ? '' : image.alt;
 					return wp.blocks.createBlock('core/image', {
 						id: image.id,
 						url: image.url,
 						alt: alt,
 						caption: image.caption
 					});
-				});
-				replaceInnerBlocks(clientId, imageBlocksToInsert, false);
+				}), false);
 			};
+
+			const mediaUploadProps = {
+				onSelect: replaceImages,
+				allowedTypes: ['image'],
+				multiple: true,
+				gallery: true
+			};
+
+			function createMediaUploadButton(ButtonComponent, label, props) {
+				return createElement(
+					MediaUploadCheck,
+					null,
+					createElement(
+						MediaUpload,
+						Object.assign({}, mediaUploadProps, props, {
+							render: function (obj) {
+								return createElement(ButtonComponent, {
+									variant: ButtonComponent === Button ? 'primary' : undefined,
+									onClick: obj.open,
+								}, label);
+							},
+						})
+					)
+				);
+			}
 
 			if (!hasImages) {
 				return createElement(
@@ -86,26 +108,7 @@
 							label: __('Slideshow'),
 							instructions: __('Add images to your slideshow.')
 						},
-						createElement(
-							MediaUploadCheck,
-							null,
-							createElement(
-								MediaUpload,
-								{
-									onSelect: replaceImages,
-									allowedTypes: ['image'],
-									multiple: true,
-									gallery: true,
-									value: [],
-									render: function (obj) {
-										return createElement(Button, {
-											variant: 'primary',
-											onClick: obj.open,
-										}, __('Open Media Library'));
-									},
-								}
-							)
-						)
+						createMediaUploadButton(Button, __('Open Media Library'), { value: [] })
 					)
 				);
 			}
@@ -116,28 +119,12 @@
 				createElement(
 					BlockControls,
 					{ group: 'other' },
-					createElement(
-						MediaUploadCheck,
-						null,
-						createElement(
-							MediaUpload,
-							{
-								onSelect: replaceImages,
-								allowedTypes: ['image'],
-								multiple: true,
-								gallery: true,
-								addToGallery: true,
-								value: imageBlocks.map(function (block) {
-									return block.attributes.id;
-								}).filter(Boolean),
-								render: function (obj) {
-									return createElement(ToolbarButton, {
-										onClick: obj.open,
-									}, __('Update Images'));
-								},
-							}
-						)
-					)
+					createMediaUploadButton(ToolbarButton, __('Update Images'), {
+						addToGallery: true,
+						value: imageBlocks.map(function (block) {
+							return block.attributes.id;
+						}).filter(Boolean)
+					})
 				),
 				createElement('div', innerBlocksProps,
 					createElement(InnerBlocks, null)
@@ -159,134 +146,97 @@
 	// Editor Slideshow Functionality
 	// ============================================================================
 
-	function initSlideshow(block) {
-		const images = block.querySelectorAll('img');
-		if (images.length < 2) {
+	function applyStyle(element, styles) {
+		if (!element) {
 			return;
 		}
-
-		if (block._slideshowInterval) {
-			clearInterval(block._slideshowInterval);
-		}
-
-		let currentIndex = 0;
-		images.forEach(function (img, index) {
-			img.style.opacity = index === 0 ? '1' : '0';
-			img.style.transition = 'opacity 1s ease-in-out';
+		Object.keys(styles).forEach(function (prop) {
+			element.style[prop] = styles[prop];
 		});
-
-		function showNextImage() {
-			images[currentIndex].style.opacity = '0';
-			currentIndex = (currentIndex + 1) % images.length;
-			images[currentIndex].style.opacity = '1';
-		}
-
-		block._slideshowInterval = setInterval(showNextImage, SLIDE_DURATION);
 	}
 
-	function applyImageBlockStyles(imgBlock) {
-		imgBlock.style.position = 'absolute';
-		imgBlock.style.top = '0';
-		imgBlock.style.left = '0';
-		imgBlock.style.width = '100%';
-		imgBlock.style.height = '100%';
-		imgBlock.style.margin = '0';
-		imgBlock.style.display = 'block';
-		imgBlock.style.pointerEvents = 'none';
-
-		const imgWrapper = imgBlock.querySelector('div');
-		if (imgWrapper) {
-			imgWrapper.style.width = '100%';
-			imgWrapper.style.height = '100%';
-			imgWrapper.style.position = 'relative';
-			imgWrapper.style.pointerEvents = 'none';
-		}
-
-		const img = imgBlock.querySelector('img');
-		if (img) {
-			img.style.width = '100%';
-			img.style.height = '100%';
-			img.style.objectFit = 'cover';
-			img.style.display = 'block';
-			img.style.position = 'absolute';
-			img.style.top = '0';
-			img.style.left = '0';
-			img.style.pointerEvents = 'none';
-		}
+	function getBlockWidth(block) {
+		return block.offsetWidth || block.clientWidth;
 	}
 
-	function applyContainerStyles(block) {
-		block.style.position = 'relative';
-		block.style.overflow = 'hidden';
-		block.style.width = '100%';
-		block.style.minHeight = MIN_HEIGHT + 'px';
-		block.style.display = 'block';
-
-		const innerBlocks = block.querySelector('.block-editor-inner-blocks');
-		if (innerBlocks) {
-			innerBlocks.style.width = '100%';
-			innerBlocks.style.height = '100%';
-			innerBlocks.style.position = 'relative';
-			innerBlocks.style.minHeight = MIN_HEIGHT + 'px';
-			innerBlocks.style.display = 'block';
-		}
-
-		const layoutContainer = block.querySelector('.block-editor-block-list__layout');
-		if (layoutContainer) {
-			layoutContainer.style.position = 'relative';
-			layoutContainer.style.width = '100%';
-			layoutContainer.style.height = '100%';
-			layoutContainer.style.minHeight = MIN_HEIGHT + 'px';
-			layoutContainer.style.display = 'block';
-		}
-	}
-
-	function updateResponsiveStyles(block) {
-		const blockWidth = block.offsetWidth || block.clientWidth;
-		const isDesktop = blockWidth >= BREAKPOINT_DESKTOP;
-		block.style.aspectRatio = isDesktop ? '16 / 9' : 'auto';
-		block.style.height = isDesktop ? 'auto' : MOBILE_HEIGHT + 'px';
-		block.style.minHeight = '0';
+	function getResponsiveStyles(block) {
+		const isDesktop = getBlockWidth(block) >= BREAKPOINT_DESKTOP;
+		return {
+			aspectRatio: isDesktop ? '16 / 9' : 'auto',
+			height: isDesktop ? 'auto' : MOBILE_HEIGHT + 'px'
+		};
 	}
 
 	function applySlideshowStyles(block) {
-		applyContainerStyles(block);
+		applyStyle(block, {
+			width: '100%',
+			display: 'block'
+		});
 
-		const imageBlocks = block.querySelectorAll('.wp-block-image');
-		imageBlocks.forEach(applyImageBlockStyles);
+		applyStyle(block.querySelector('.components-resizable-box__container'), {
+			maxWidth: 'none',
+			maxHeight: 'none'
+		});
 
-		updateResponsiveStyles(block);
+		applyStyle(block.querySelector('.block-editor-inner-blocks'), {
+			height: '100%'
+		});
 
-		// Clean up existing resize observer.
+		applyStyle(block.querySelector('.block-editor-block-list__layout'), {
+			height: '100%'
+		});
+
+		block.querySelectorAll('.wp-block-image').forEach(function (imgBlock) {
+			applyStyle(imgBlock, { pointerEvents: 'none' }); // Prevent interaction in editor.
+			applyStyle(imgBlock.querySelector('div'), {
+				width: '100%',
+				height: '100%'
+			});
+		});
+
+		applyStyle(block, getResponsiveStyles(block));
+
 		if (block._slideshowResizeObserver) {
 			block._slideshowResizeObserver.disconnect();
 		}
 
-		// Update on resize.
 		const resizeObserver = new ResizeObserver(function () {
-			updateResponsiveStyles(block);
+			applyStyle(block, getResponsiveStyles(block));
 		});
 		resizeObserver.observe(block);
-		block._slideshowResizeObserver = resizeObserver;
+		block._slideshowResizeObserver = resizeObserver; // Store for cleanup.
 
-		initSlideshow(block);
-	}
+		const images = block.querySelectorAll('img');
+		if (images.length >= 2) {
+			if (block._slideshowInterval) {
+				clearInterval(block._slideshowInterval); // Clean up existing interval.
+			}
 
-	function processSlideshowBlock(block) {
-		if (block.querySelectorAll('img').length === 0) {
-			return;
+			let currentIndex = 0;
+			images.forEach(function (img, index) {
+				applyStyle(img, {
+					opacity: index === 0 ? '1' : '0',
+					transition: 'opacity 1s ease-in-out'
+				});
+			});
+
+			block._slideshowInterval = setInterval(function () {
+
+				// Show next image.
+				applyStyle(images[currentIndex], { opacity: '0' });
+				currentIndex = (currentIndex + 1) % images.length;
+				applyStyle(images[currentIndex], { opacity: '1' });
+			}, SLIDE_DURATION); // Store for cleanup.
 		}
-		requestAnimationFrame(function () {
-			applySlideshowStyles(block);
-		});
 	}
 
-	function initEditorSlideshow() {
+	function init() {
 		const blockEditor = document.getElementById('editor');
 		if (!blockEditor) {
 			return;
 		}
 
+		// Two-step observer: first wait for iframe, then observe editor content.
 		const iframeObserver = new MutationObserver(function () {
 			const iframe = document.querySelector('iframe');
 			if (!iframe || !iframe.contentDocument) {
@@ -298,13 +248,41 @@
 				return;
 			}
 
-			const existingBlocks = iframe.contentDocument.querySelectorAll('[data-type="slideshow-block/slideshow"]');
-			existingBlocks.forEach(processSlideshowBlock);
+				const processAllSlideshows = function () {
+					iframe.contentDocument.querySelectorAll('[data-type="slideshow-block/slideshow"]').forEach(function (block) {
+						if (block.querySelectorAll('img').length === 0) {
+							return;
+						}
 
-			const editorObserver = new MutationObserver(function () {
-				iframe.contentDocument.querySelectorAll('[data-type="slideshow-block/slideshow"]').forEach(processSlideshowBlock);
-			});
+						// Wait for wp to apply styles, then overwrite with our own.
+						const container = block.querySelector('.components-resizable-box__container');
+						if (!container) {
+							return;
+						}
 
+						const styleObserver = new MutationObserver(function (mutations) {
+							mutations.forEach(function (mutation) {
+								if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
+									if (container.style.maxHeight) {
+										applySlideshowStyles(block);
+										styleObserver.disconnect();
+									}
+								}
+							});
+						});
+
+						styleObserver.observe(container, {
+							attributes: true,
+							attributeFilter: ['style']
+						});
+					});
+				};
+
+			// Process existing slideshow blocks.
+			processAllSlideshows();
+
+			// Observe editor for new slideshow blocks.
+			const editorObserver = new MutationObserver(processAllSlideshows);
 			editorObserver.observe(editorContent, { childList: true, subtree: true });
 			iframeObserver.disconnect();
 		});
@@ -312,5 +290,5 @@
 		iframeObserver.observe(blockEditor, { childList: true, subtree: true });
 	}
 
-	document.addEventListener('DOMContentLoaded', initEditorSlideshow);
+	document.addEventListener('DOMContentLoaded', init);
 })();

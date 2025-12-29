@@ -4,16 +4,12 @@
 	width: 100%;
 	position: relative;
 	overflow: hidden;
+	aspect-ratio: 16 / 9;
 }
 
 .wp-block-slideshow-block-slideshow .wp-block-image {
 	position: absolute;
 	top: 0;
-	width: 100%;
-	height: 100%;
-}
-
-.wp-block-slideshow-block-slideshow .wp-block-image > div {
 	width: 100%;
 	height: 100%;
 }
@@ -35,15 +31,10 @@
 	display: none;
 }
 
-/* Desktop: 16:9 aspect ratio, full width */
-.wp-block-slideshow-block-slideshow {
-	aspect-ratio: 16 / 9;
-}
-
 /* Mobile: fixed height 800px, sides hidden as screen narrows */
-@media (max-width: 1200px) {
+@media (max-width: 1199px) {
 	.wp-block-slideshow-block-slideshow {
-		aspect-ratio: none;
+		aspect-ratio: auto;
 		height: 800px;
 	}
 }
