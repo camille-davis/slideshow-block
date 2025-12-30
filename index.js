@@ -156,7 +156,7 @@
 	}
 
 	function getResponsiveStyles(block) {
-		const isDesktop = (block.offsetWidth || block.clientWidth) >= BREAKPOINT_DESKTOP;
+		const isDesktop = (block.offsetWidth || block.clientWidth) > BREAKPOINT_DESKTOP;
 		return {
 			aspectRatio: isDesktop ? '16 / 9' : 'auto',
 			height: isDesktop ? 'auto' : MOBILE_HEIGHT + 'px'

@@ -32,10 +32,10 @@
 }
 
 /* Mobile: fixed height 800px, sides hidden as screen narrows */
-@media (max-width: 1199px) {
+@media (max-width: 1200px) {
 	.wp-block-slideshow-block-slideshow {
 		aspect-ratio: auto;
-		height: 800px;
+		height: 700px;
 	}
 }
 

@@ -3,7 +3,7 @@
  * Plugin Name: Slideshow Block
  * Description: A simple Slideshow block for Gutenberg with automatic image transitions.
  * Version: 1.0.0
- * Author: Carnaval SF
+ * Author: Camille Davis
  * License: GPL-2.0-or-later
  * Text Domain: slideshow-block
  *
